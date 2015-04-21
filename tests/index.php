@@ -11,21 +11,32 @@ require __DIR__ . '/../vendor/autoload.php';
 \PHPCli\Cli::heading("Text Output");
 
 \PHPCli\Cli::write("This is a plain string");
-\PHPCli\Cli::write("This is a string with a red foreground colour", \PHPCli\Color::$red);
-\PHPCli\Cli::write("This is a string with a white foreground and Red Background", \PHPCli\Color::$white, \PHPCli\BackgroundColor::$red);
+\PHPCli\Cli::write("This is a string with a Red text colour", \PHPCli\Color::$red);
+\PHPCli\Cli::write("This is a string with a White text and Red Background", \PHPCli\Color::$white, \PHPCli\BackgroundColor::$red);
 
-\PHPCli\Cli::write("Left Align", null,null, \PHPCli\Cli::$left);
-\PHPCli\Cli::write("Center Align", null,null, \PHPCli\Cli::$center);
-\PHPCli\Cli::write("Right Align", null,null, \PHPCli\Cli::$right);
+\PHPCli\Cli::write("Left Align", null, null, \PHPCli\Cli::$left);
+\PHPCli\Cli::write("Center Align", null, null, \PHPCli\Cli::$center);
+\PHPCli\Cli::write("Right Align", null, null, \PHPCli\Cli::$right);
 
-\PHPCli\Cli::new_line(5);
+$color = include('color.php');
+
+$background_color = include('background_color.php');
+
+foreach($color AS $text){
+    foreach($background_color AS $background){
+        \PHPCli\Cli::out(\PHPCli\Cli::color(" Text ", $text, $background));
+    }
+    \PHPCli\Cli::new_line();
+}
+
+\PHPCli\Cli::new_line(2);
 \PHPCli\Cli::heading("Text Error Output");
 
 \PHPCli\Cli::error("Failure: This is a plain error message");
 \PHPCli\Cli::error("Failure: This is a error message with a yellow foreground colour", \PHPCli\Color::$yellow);
 \PHPCli\Cli::error("Failure: This is a string with a white foreground and Red Background", \PHPCli\Color::$white, \PHPCli\BackgroundColor::$red);
 
-\PHPCli\Cli::new_line(5);
+\PHPCli\Cli::new_line(2);
 \PHPCli\Cli::heading("Prompt for input");
 
 //Prompt for input
@@ -37,9 +48,9 @@ $colour = \PHPCli\Cli::prompt('What is your favorite color?', 'white');
 \PHPCli\Cli::write("I also like " . $colour);
 
 // Will only accept the options in the array
-$ready = \PHPCli\Cli::prompt('Are you ready to continue?', array('y','n'));
+$ready = \PHPCli\Cli::prompt('Are you ready to continue?', array('y', 'n'));
 
-\PHPCli\Cli::new_line(5);
+\PHPCli\Cli::new_line(2);
 \PHPCli\Cli::heading("Progress Bar");
 
 
@@ -83,7 +94,7 @@ for ($i = 1; $i <= $size; $i++) {
 
 \PHPCli\ProgressBar::finish();
 
-\PHPCli\Cli::new_line(5);
+\PHPCli\Cli::new_line(2);
 \PHPCli\Cli::heading("Tables");
 
 $table = new \PHPCli\Table();
