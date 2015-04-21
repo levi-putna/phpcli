@@ -1,6 +1,6 @@
 {
   "name": "levi-putna/phpcli",
-  "description": "CLI Utility Script for PHP scripts",
+  "description": "CLI Utility for PHP scripts",
   "keywords": ["cli", "table", "progress", "bar", "command", "line"],
   "homepage": "https://github.com/levi-putna/phpcli",
   "license": "BSD",

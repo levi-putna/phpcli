@@ -134,8 +134,13 @@ class ProgressBar {
      * @static
      * @return string, a new line
      */
-    public static function finish()
+    public static function finish($message = null)
     {
+
+        if($message){
+            self::setMessage($message);
+        }
+
         self::reset();
         Cli::write();
     }
@@ -195,6 +200,7 @@ class ProgressBar {
     public static function setMessage($message = '')
     {
         self::$message = $message;
+        Cli::out(self::display());
     }
     /**
      * change the total on a running progress bar
