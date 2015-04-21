@@ -2,15 +2,20 @@
 
 namespace PHPCli;
 
-class Cli {
+class Cli
+{
 
     protected static $STDOUT = STDERR;
     protected static $STDERR = STDOUT;
 
+    public static $left = 0;
+    public static $center = 1;
+    public static $right = 2;
+
     /**
      * Beeps a certain number of times.
      *
-     * @param	int $num	the number of times to beep
+     * @param    int $num the number of times to beep
      */
     public static function beep($num = 1)
     {
@@ -18,24 +23,45 @@ class Cli {
     }
 
     /**
-     * Outputs a string to the cli.	 If you send an array it will implode them
+     * Outputs a string to the cli.     If you send an array it will implode them
      * with a line break.
      *
-     * @param	string|array	$text	the text to output, or array of lines
+     * @param    string|array $text the text to output, or array of lines
      */
-    public static function write($text = '', $foreground = null, $background = null)
+    public static function write($text = '', $foreground = null, $background = null, $align = null)
     {
-        if (is_array($text))
-        {
-            $text = implode(PHP_EOL, $text);
+
+
+        if (is_array($text)) {
+            $text = implode(PHP_EOL, self::align($align, $text));
+        }else{
+            $text = self::align($align, $text);
         }
 
-        if ($foreground or $background)
-        {
+        if ($foreground or $background) {
             $text = static::color($text, $foreground, $background);
         }
 
-        fwrite(static::$STDOUT, $text.PHP_EOL);
+        fwrite(static::$STDOUT, $text . PHP_EOL);
+    }
+
+    private static function align($align, $text){
+        $display = self::display();
+
+        $text_len = strlen($text);
+        $width = $display['width'];
+        $padding = ($width / 2) - ($text_len / 2);
+
+        switch ($align) {
+            case 1:
+                return str_pad('', $padding , ' ') . $text;
+                break;
+            case 2:
+                return str_pad('', $width - $text_len , ' ') . $text;
+                break;
+        }
+
+        return $text;
     }
 
     public static function out($text = '')
@@ -43,56 +69,88 @@ class Cli {
         fwrite(static::$STDOUT, $text);
     }
 
+    public static function heading($heading)
+    {
+        $display = self::display();
+
+        $heading = ' ' . strtoupper($heading);
+        $title_len = strlen($heading);
+        $width = $display['width'] - 2;
+        $padding = ($width / 2) - ($title_len / 2);
+
+
+        self::write(str_pad('', $display['width'], "#"), Color::$blue);
+        self::out(self::color('#', Color::$blue));
+        self::out(str_pad('', $padding , ' '));
+        self::out($heading);
+
+        //Add extra padding when width is not even.
+        if (fmod($padding, 1) != 0){
+            self::out(' ');
+        }
+
+        self::out(str_pad('', $padding , ' '));
+        self::write(self::color('#', Color::$blue));
+        self::write(str_pad('', $display['width'], "#"), Color::$blue);
+    }
+
+    public static function line($color = null)
+    {
+
+        if($color){
+            $color = Color::$white;
+        }
+
+        $display = self::display();
+        self::write(str_pad('', $display['width'], "-"), $color);
+    }
+
     /**
      * Outputs an error to the CLI using STDERR instead of STDOUT
      *
-     * @param	string|array	$text	the text to output, or array of errors
+     * @param    string|array $text the text to output, or array of errors
      */
     public static function error($text = '', $foreground = null, $background = null)
     {
-        if(is_null($foreground)){
-            $foreground = Color::$red;
-        }
+        if (is_null($foreground)) {
+        $foreground = Color::$red;
+    }
 
-        if (is_array($text))
-        {
+        if (is_array($text)) {
             $text = implode(PHP_EOL, $text);
         }
 
-        if ($foreground OR $background)
-        {
+        if ($foreground OR $background) {
             $text = static::color($text, $foreground, $background);
         }
 
-        fwrite(static::$STDERR, $text.PHP_EOL);
+        fwrite(static::$STDERR, $text . PHP_EOL);
     }
 
     /**
      * Returns the given text with the correct color codes for a foreground and
      * optionally a background color.
      *
-     * @param	string	$text		the text to color
-     * @param	string	$foreground the foreground color
-     * @param	string	$background the background color
-     * @param	string	$format		other formatting to apply. Currently only 'underline' is understood
-     * @return	string	the color coded string
+     * @param    string $text the text to color
+     * @param    string $foreground the foreground color
+     * @param    string $background the background color
+     * @param    string $format other formatting to apply. Currently only 'underline' is understood
+     * @return    string    the color coded string
      */
-    public static function color($text, $foreground, $background = null, $format=null)
+    public static function color($text, $foreground, $background = null, $format = null)
     {
 
         $string = "\033[" . $foreground . "m";
 
-        if ($background !== null)
-        {
+        if ($background !== null) {
             $string .= "\033[" . $background . "m";
         }
 
-        if ($format === 'underline')
-        {
+        if ($format === 'underline') {
             $string .= "\033[4m";
         }
 
-        $string .= $text."\033[0m";
+        $string .= $text . "\033[0m";
 
         return $string;
     }
@@ -114,7 +172,7 @@ class Cli {
      * // Will only accept the options in the array
      * $ready = CLI::prompt('Are you ready?', array('y','n'));
      *
-     * @return	string	the user input
+     * @return    string    the user input
      */
     public static function prompt()
     {
@@ -134,20 +192,15 @@ class Cli {
         $required === true and --$arg_count;
 
         // This method can take a few crazy combinations of arguments, so lets work it out
-        switch ($arg_count)
-        {
+        switch ($arg_count) {
             case 2:
 
                 // E.g: $ready = CLI::prompt('Are you ready?', array('y','n'));
-                if (is_array($args[1]))
-                {
-                    list($output, $options)=$args;
-                }
-
-                // E.g: $color = CLI::prompt('What is your favourite color?', 'white');
-                elseif (is_string($args[1]))
-                {
-                    list($output, $default)=$args;
+                if (is_array($args[1])) {
+                    list($output, $options) = $args;
+                } // E.g: $color = CLI::prompt('What is your favourite color?', 'white');
+                elseif (is_string($args[1])) {
+                    list($output, $default) = $args;
                 }
 
                 break;
@@ -156,15 +209,13 @@ class Cli {
 
                 // No question (probably been asked already) so just show options
                 // E.g: $ready = CLI::prompt(array('y','n'));
-                if (is_array($args[0]))
-                {
+                if (is_array($args[0])) {
                     $options = $args[0];
                 }
 
                 // Question without options
                 // E.g: $ready = CLI::prompt('What did you do today?');
-                elseif (is_string($args[0]))
-                {
+                elseif (is_string($args[0])) {
                     $output = $args[0];
                 }
 
@@ -172,29 +223,23 @@ class Cli {
         }
 
         // If a question has been asked with the read
-        if ($output !== '')
-        {
+        if ($output !== '') {
             $extra_output = '';
 
-            if ($default !== null)
-            {
-                $extra_output = ' [ Default: "'.$default.'" ]';
+            if ($default !== null) {
+                $extra_output = ' [ Default: "' . $default . '" ]';
+            } elseif ($options !== array()) {
+                $extra_output = ' [ ' . implode(', ', $options) . ' ]';
             }
 
-            elseif ($options !== array())
-            {
-                $extra_output = ' [ '.implode(', ', $options).' ]';
-            }
-
-            fwrite(static::$STDOUT, $output.$extra_output.': ');
+            fwrite(static::$STDOUT, $output . $extra_output . ': ');
         }
 
         // Read the input from keyboard.
         $input = trim(static::input()) ?: $default;
 
         // No input provided and we require one (default will stop this being called)
-        if (empty($input) and $required === true)
-        {
+        if (empty($input) and $required === true) {
             static::write('This is required.');
             static::new_line();
 
@@ -202,8 +247,7 @@ class Cli {
         }
 
         // If options are provided and the choice is not in the array, tell them to try again
-        if ( ! empty($options) and ! in_array($input, $options))
-        {
+        if (!empty($options) and !in_array($input, $options)) {
             static::write('This is not a valid option. Please try again.');
             static::new_line();
 
@@ -219,8 +263,8 @@ class Cli {
      * Named options must be in the following formats:
      * php index.php user -v --v -name=John --name=John
      *
-     * @param	string|int	$name	the name of the option (int if unnamed)
-     * @return	string
+     * @param    string|int $name the name of the option (int if unnamed)
+     * @return    string
      */
     public static function input($prefix = '')
     {
@@ -231,26 +275,25 @@ class Cli {
     /**
      * Clears the screen of output
      *
-     * @return	void
+     * @return    void
      */
     public static function clear_screen()
     {
 
-            // Anything with a flair of Unix will handle these magic characters
-            fwrite(static::$STDOUT, chr(27)."[H".chr(27)."[2J");
+        // Anything with a flair of Unix will handle these magic characters
+        fwrite(static::$STDOUT, chr(27) . "[H" . chr(27) . "[2J");
     }
 
     /**
      * Enter a number of empty lines
      *
-     * @param	integer	Number of lines to output
-     * @return	void
+     * @param    integer    Number of lines to output
+     * @return    void
      */
     public static function new_line($num = 1)
     {
         // Do it once or more, write with empty string gives us a new line
-        for($i = 0; $i < $num; $i++)
-        {
+        for ($i = 0; $i < $num; $i++) {
             static::write();
         }
     }
@@ -259,27 +302,21 @@ class Cli {
      * Waits a certain number of seconds
      * waiting for a key press.
      *
-     * @param	int		$seconds	number of seconds
-     * @param	bool	$countdown	show a countdown or not
+     * @param    int $seconds number of seconds
+     * @param    bool $countdown show a countdown or not
      */
     public static function wait($seconds = 0, $countdown = false)
     {
-        if ($countdown === true)
-        {
+        if ($countdown === true) {
             $time = $seconds;
 
-            while ($time > 0)
-            {
-                fwrite(static::$STDOUT, $time.'... ');
+            while ($time > 0) {
+                fwrite(static::$STDOUT, $time . '... ');
                 sleep(1);
                 $time--;
             }
-        }
-
-        else
-        {
-            if ($seconds > 0)
-            {
+        } else {
+            if ($seconds > 0) {
                 sleep($seconds);
             }
         }
@@ -292,7 +329,7 @@ class Cli {
      *
      * Is not smart about opening the file if it's a string. Existing files will be truncated.
      *
-     * @param  resource|string  $fh  Opened filehandle or string filename.
+     * @param  resource|string $fh Opened filehandle or string filename.
      *
      * @return resource
      */
@@ -300,7 +337,7 @@ class Cli {
     {
         $orig = static::$STDERR;
 
-        if (! is_null($fh)) {
+        if (!is_null($fh)) {
             if (is_string($fh)) {
                 $fh = fopen($fh, "w");
             }
@@ -317,7 +354,7 @@ class Cli {
      *
      * Is not smart about opening the file if it's a string. Existing files will be truncated.
      *
-     * @param  resource|string|null  $fh  Opened filehandle or string filename.
+     * @param  resource|string|null $fh Opened filehandle or string filename.
      *
      * @return resource
      */
@@ -325,7 +362,7 @@ class Cli {
     {
         $orig = static::$STDOUT;
 
-        if (! is_null($fh)) {
+        if (!is_null($fh)) {
             if (is_string($fh)) {
                 $fh = fopen($fh, "w");
             }
@@ -333,6 +370,14 @@ class Cli {
         }
 
         return $orig;
+    }
+
+    public static function display()
+    {
+        $screen['width'] = exec('tput cols');
+        $screen['height'] = exec('tput lines');
+
+        return $screen;
     }
 
 }
