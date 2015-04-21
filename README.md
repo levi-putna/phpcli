@@ -23,3 +23,5 @@ require 'vendor/autoload.php';
 ## Usage
 
 See the example [Examples](/tests/index.php)
+
+![Screen Shot](/tests/screen_shot.png)
