@@ -22,4 +22,4 @@ require 'vendor/autoload.php';
 
 ## Usage
 
-See the example [Examples](/blob/master/tests/index.php)
+See the example [Examples](/tests/index.php)
